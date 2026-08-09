@@ -1,0 +1,6 @@
+# JitPack's default JDK is too old to run Gradle 9, and the Kotlin toolchain asks for 17.
+jdk:
+  - openjdk17
+
+install:
+  - ./gradlew build publishToMavenLocal
