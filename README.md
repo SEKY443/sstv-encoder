@@ -9,6 +9,10 @@ mode radio amateurs have used to send images over HF since the 1950s.
 Feed it pixels, get back 16-bit mono PCM. Play that out of a speaker and any SSTV decoder
 (Robot36, MMSSTV, QSSTV, an FT-8xx radio) will draw your picture back.
 
+> **Home: <https://github.com/SEKY443/sstv-encoder>**
+> That's the only place this library is published from. If you want to use it, start there —
+> releases, issues and the latest version all live in that repo.
+
 ```kotlin
 import io.github.seky443.sstv.*
 import io.github.seky443.sstv.image.readSstvPixels
@@ -242,4 +246,13 @@ trigger the build. After that JitPack picks up new tags on demand.
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). Use it in anything, commercial or not; just keep the copyright
+notice. That is the whole point: the existing SSTV projects are GPL, which is what made this one
+necessary.
+
+---
+
+**Using this library?** Everything lives at <https://github.com/SEKY443/sstv-encoder> — grab the
+latest version there, and open an
+[issue](https://github.com/SEKY443/sstv-encoder/issues) if a decoder will not read your
+transmission.
