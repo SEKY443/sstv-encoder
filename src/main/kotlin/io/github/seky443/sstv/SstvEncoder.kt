@@ -1,17 +1,15 @@
 package io.github.seky443.sstv
 
-import kotlin.math.PI
 import kotlin.math.roundToInt
-import kotlin.math.sin
 
 /**
  * Encodes an image into an analogue SSTV audio waveform.
  *
  * There is no maintained SSTV *encoder* library on Maven Central (the well known projects are
  * decoders, and the C++ ones are GPL), so this is a direct implementation of the mode timings in
- * [SstvMode]. It is deliberately dependency free: the whole encoder is a frequency generator
- * driven by the per-mode line structure, and it touches nothing but the Kotlin standard library,
- * which is what lets the same code run on the JVM and on Android.
+ * [SstvMode]. It is deliberately dependency free: the encoder writes the VIS header and then hands
+ * each scan line to the mode's [LineFormat], touching nothing but the Kotlin standard library, which
+ * is what lets the same code run on the JVM and on Android.
  *
  * Output is 16-bit signed mono PCM, ready to hand to `javax.sound`, an Android `AudioTrack`, or a
  * WAV file via [writeWav].
@@ -61,11 +59,10 @@ public class SstvEncoder @JvmOverloads constructor(
 
         writeHeader(writer, mode.visCode)
 
-        for (y in 0 until mode.height) {
-            when (mode) {
-                SstvMode.MARTIN_M1 -> writeMartinLine(writer, mode, pixels, y)
-                SstvMode.SCOTTIE_S1 -> writeScottieLine(writer, mode, pixels, y)
-            }
+        // PD sends two picture rows per transmitted line; everything else sends one.
+        val rowsPerLine = mode.rowsPerLine
+        for (line in 0 until mode.lineCount) {
+            mode.format.writeLine(writer, mode, pixels, line * rowsPerLine)
         }
 
         writer.silence(trailingSilenceSeconds)
@@ -107,103 +104,6 @@ public class SstvEncoder @JvmOverloads constructor(
         )
 
         writer.tone(SstvMode.FREQ_SYNC, VIS_BIT_SECONDS) // stop bit
-    }
-
-    /** Martin M1 line: sync, porch, then green, blue and red sweeps each followed by a separator. */
-    private fun writeMartinLine(writer: ToneWriter, mode: SstvMode, pixels: IntArray, y: Int) {
-        writer.tone(SstvMode.FREQ_SYNC, mode.syncPulseSeconds)
-        writer.tone(SstvMode.FREQ_BLACK, mode.syncPorchSeconds)
-
-        writeScan(writer, mode, pixels, y, Channel.GREEN)
-        writer.tone(SstvMode.FREQ_BLACK, mode.separatorSeconds)
-
-        writeScan(writer, mode, pixels, y, Channel.BLUE)
-        writer.tone(SstvMode.FREQ_BLACK, mode.separatorSeconds)
-
-        writeScan(writer, mode, pixels, y, Channel.RED)
-        writer.tone(SstvMode.FREQ_BLACK, mode.separatorSeconds)
-    }
-
-    /**
-     * Scottie S1 line: separator, green, separator, blue, then the sync pulse and porch before the
-     * red sweep. The sync sitting mid-line rather than at the start is what distinguishes Scottie
-     * from Martin.
-     */
-    private fun writeScottieLine(writer: ToneWriter, mode: SstvMode, pixels: IntArray, y: Int) {
-        writer.tone(SstvMode.FREQ_BLACK, mode.separatorSeconds)
-        writeScan(writer, mode, pixels, y, Channel.GREEN)
-
-        writer.tone(SstvMode.FREQ_BLACK, mode.separatorSeconds)
-        writeScan(writer, mode, pixels, y, Channel.BLUE)
-
-        writer.tone(SstvMode.FREQ_SYNC, mode.syncPulseSeconds)
-        writer.tone(SstvMode.FREQ_BLACK, mode.syncPorchSeconds)
-        writeScan(writer, mode, pixels, y, Channel.RED)
-    }
-
-    private enum class Channel { RED, GREEN, BLUE }
-
-    /** Sweeps one colour channel of row [y] across the full image width. */
-    private fun writeScan(
-        writer: ToneWriter,
-        mode: SstvMode,
-        pixels: IntArray,
-        y: Int,
-        channel: Channel
-    ) {
-        val rowOffset = y * mode.width
-        for (x in 0 until mode.width) {
-            val pixel = pixels[rowOffset + x]
-            val value = when (channel) {
-                Channel.RED -> (pixel shr 16) and 0xFF
-                Channel.GREEN -> (pixel shr 8) and 0xFF
-                Channel.BLUE -> pixel and 0xFF
-            }
-            writer.tone(frequencyFor(value), mode.pixelSeconds)
-        }
-    }
-
-    /**
-     * Phase-continuous tone generator.
-     *
-     * Sample counts are derived from cumulative elapsed time rather than per-segment rounding: a
-     * Martin 1 frame contains over 245,000 segments, so rounding each one independently would drift
-     * the line timing far enough to shear the received picture.
-     */
-    private class ToneWriter(
-        private val sampleRate: Int,
-        private val amplitude: Double,
-        capacity: Int
-    ) {
-        private val buffer = ShortArray(capacity)
-        private var written = 0
-        private var elapsedSeconds = 0.0
-        private var phase = 0.0
-
-        fun tone(frequencyHz: Double, seconds: Double) {
-            val count = advance(seconds)
-            val phaseStep = 2.0 * PI * frequencyHz / sampleRate
-            repeat(count) {
-                buffer[written++] = (sin(phase) * amplitude * Short.MAX_VALUE).toInt().toShort()
-                phase += phaseStep
-                if (phase > 2.0 * PI) phase -= 2.0 * PI
-            }
-        }
-
-        fun silence(seconds: Double) {
-            val count = advance(seconds)
-            repeat(count) { buffer[written++] = 0 }
-            phase = 0.0
-        }
-
-        /** Returns how many samples this segment gets, keeping the timeline drift-free. */
-        private fun advance(seconds: Double): Int {
-            elapsedSeconds += seconds
-            val target = (elapsedSeconds * sampleRate).roundToInt().coerceAtMost(buffer.size)
-            return (target - written).coerceAtLeast(0)
-        }
-
-        fun finish(): ShortArray = if (written == buffer.size) buffer else buffer.copyOf(written)
     }
 
     public companion object {

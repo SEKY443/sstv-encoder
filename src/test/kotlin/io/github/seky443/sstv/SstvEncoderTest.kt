@@ -128,17 +128,13 @@ class SstvEncoderTest {
         // Pure green: the green sweep should read as white, the blue and red sweeps as black.
         val signal = SstvEncoder.encode(solidImage(0xFF00FF00.toInt()), mode)
 
-        val scanStart = headerSeconds + mode.syncPulseSeconds + mode.syncPorchSeconds
-        val step = mode.scanSeconds + mode.separatorSeconds
+        val scanStart = headerSeconds + M1_SYNC + M1_PORCH
+        val step = M1_SCAN + M1_SEPARATOR
 
         // Sample the middle 60% of each sweep.
         fun sweepFrequency(index: Int): Double {
             val start = scanStart + step * index
-            return frequencyOf(
-                signal.pcm,
-                start + mode.scanSeconds * 0.2,
-                start + mode.scanSeconds * 0.8
-            )
+            return frequencyOf(signal.pcm, start + M1_SCAN * 0.2, start + M1_SCAN * 0.8)
         }
 
         assertFrequency(2300.0, sweepFrequency(0), 40.0) // green
@@ -152,11 +148,10 @@ class SstvEncoderTest {
         val signal = SstvEncoder.encode(solidImage(WHITE, scottie), scottie)
 
         // separator + green scan + separator + blue scan, then the 9 ms sync pulse.
-        val syncStart = headerSeconds +
-            2 * (scottie.separatorSeconds + scottie.scanSeconds)
+        val syncStart = headerSeconds + 2 * (S1_SEPARATOR + S1_SCAN)
         assertFrequency(
             1200.0,
-            frequencyOf(signal.pcm, syncStart + 0.001, syncStart + scottie.syncPulseSeconds - 0.001),
+            frequencyOf(signal.pcm, syncStart + 0.001, syncStart + S1_SYNC - 0.001),
             60.0
         )
     }
@@ -209,5 +204,16 @@ class SstvEncoderTest {
     private companion object {
         const val BLACK = 0xFF000000.toInt()
         const val WHITE = 0xFFFFFFFF.toInt()
+
+        // Published component timings (N7CXI, 2000), stated here rather than read back off the
+        // mode so these tests measure the waveform against the spec instead of against itself.
+        const val M1_SYNC = 0.004862
+        const val M1_PORCH = 0.000572
+        const val M1_SEPARATOR = 0.000572
+        const val M1_SCAN = 0.146432
+
+        const val S1_SYNC = 0.009
+        const val S1_SEPARATOR = 0.0015
+        const val S1_SCAN = 0.13824
     }
 }

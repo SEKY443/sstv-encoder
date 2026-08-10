@@ -36,15 +36,147 @@ transmits the day's forecast as SSTV and makes you decode it to turn the alarm o
 
 ## Supported modes
 
-To-do: Support all standardized transformation formats. 
+35 modes across 8 families. Pick one with `SstvMode.MARTIN_M1`, or look one up with
+`SstvMode.fromName("pd_120")` / `SstvMode.fromVisCode(95)`. `SstvMode.inFamily(SstvFamily.PD)`
+lists a family.
+
+Modes marked ⚠️ are **experimental** — see [below](#experimental-modes).
+
+<details open>
+<summary><b>Martin</b> — GBR sequential, sync at the head of the line</summary>
 
 | Mode | VIS | Size | Time on air |
 |---|---|---|---|
 | `MARTIN_M1` | 44 | 320 × 256 | 114.3 s |
-| `SCOTTIE_S1` | 60 | 320 × 256 | 109.6 s |
+| `MARTIN_M2` | 40 | 320 × 256 | 58.1 s |
+| `MARTIN_M3` | 36 | 320 × 128 | 57.1 s |
+| `MARTIN_M4` | 32 | 320 × 128 | 29.0 s |
+</details>
 
-Both send colour in green-blue-red order, but they lay the sync pulse out differently within a
-line — Martin opens each line with it, Scottie puts it mid-line before the red sweep.
+<details>
+<summary><b>Scottie</b> — GBR sequential, sync buried mid-line before the red sweep</summary>
+
+| Mode | VIS | Size | Time on air |
+|---|---|---|---|
+| `SCOTTIE_S1` | 60 | 320 × 256 | 109.6 s |
+| `SCOTTIE_S2` | 56 | 320 × 256 | 71.1 s |
+| `SCOTTIE_DX` | 76 | 320 × 256 | 268.9 s |
+</details>
+
+<details>
+<summary><b>Robot</b> — monochrome, and Y/C colour that sends chroma at reduced resolution</summary>
+
+| Mode | VIS | Size | Time on air |
+|---|---|---|---|
+| `ROBOT_8_BW` | 2 | 320 × 120 | 8.0 s |
+| `ROBOT_12_BW` | 6 | 320 × 120 | 12.0 s |
+| `ROBOT_24_BW` | 10 | 320 × 240 | 24.0 s |
+| `ROBOT_36` | 8 | 320 × 240 | 36.0 s |
+| `ROBOT_72` | 12 | 320 × 240 | 72.0 s |
+
+`ROBOT_36` is 4:2:0 — each line carries luminance plus *one* chrominance channel, R-Y and B-Y
+alternating, so full colour costs two lines. `ROBOT_72` is 4:2:2 and sends both every line.
+</details>
+
+<details>
+<summary><b>PD</b> — Y/C, two picture rows per transmitted line. <code>PD_120</code> is the ISS mode</summary>
+
+| Mode | VIS | Size | Time on air |
+|---|---|---|---|
+| `PD_50` | 93 | 320 × 256 | 49.7 s |
+| `PD_90` | 99 | 320 × 256 | 90.0 s |
+| `PD_120` | 95 | 640 × 496 | 126.1 s |
+| `PD_160` | 98 | 512 × 400 | 160.9 s |
+| `PD_180` | 96 | 640 × 496 | 187.1 s |
+| `PD_240` | 97 | 640 × 496 | 248.0 s |
+| `PD_290` | 94 | 800 × 616 | 288.7 s |
+
+One sync pulse covers two rows: the first row's luminance, then R-Y and B-Y averaged across both
+rows, then the second row's luminance. So `lineCount` is half `height` for these.
+</details>
+
+<details>
+<summary><b>Pasokon TV</b> — RGB on a 1965-unit line</summary>
+
+| Mode | VIS | Size | Time on air |
+|---|---|---|---|
+| `PASOKON_P3` | 113 | 640 × 496 | 203.1 s |
+| `PASOKON_P5` | 114 | 640 × 496 | 304.6 s |
+| `PASOKON_P7` | 115 | 640 × 496 | 406.1 s |
+</details>
+
+<details>
+<summary><b>Wraase</b> — RGB with no separators between sweeps</summary>
+
+| Mode | VIS | Size | Time on air |
+|---|---|---|---|
+| `WRAASE_SC2_120` | 63 | 320 × 256 | 121.7 s |
+| `WRAASE_SC2_180` | 55 | 320 × 256 | 182.0 s |
+| `WRAASE_SC2_60` ⚠️ | 59 | 320 × 256 | 60.0 s |
+| `WRAASE_SC1_24` ⚠️ | 33 | 256 × 240 | 24.0 s |
+| `WRAASE_SC1_48` ⚠️ | 37 | 256 × 240 | 48.0 s |
+| `WRAASE_SC1_96` ⚠️ | 41 | 256 × 240 | 96.0 s |
+</details>
+
+<details>
+<summary><b>AVT</b> ⚠️ — header-based sync instead of a pulse per line</summary>
+
+| Mode | VIS | Size | Time on air |
+|---|---|---|---|
+| `AVT_24` ⚠️ | 64 | 320 × 240 | 24.0 s |
+| `AVT_90` ⚠️ | 68 | 320 × 240 | 90.0 s |
+| `AVT_125` ⚠️ | 72 | 320 × 240 | 125.0 s |
+| `AVT_188` ⚠️ | 73 | 320 × 240 | 188.0 s |
+</details>
+
+<details>
+<summary><b>Legacy monochrome</b> ⚠️ — the historic 8/16/32-second formats</summary>
+
+| Mode | VIS | Size | Time on air |
+|---|---|---|---|
+| `MONO_8` ⚠️ | 1 | 120 × 120 | 8.0 s |
+| `MONO_16` ⚠️ | 3 | 120 × 120 | 16.0 s |
+| `MONO_32` ⚠️ | 5 | 256 × 240 | 32.0 s |
+</details>
+
+### Where the timings come from
+
+Every non-experimental mode is transcribed from JL Barber N7CXI, *Proposal for SSTV Mode
+Specifications* (Dayton, 2000), with Dave Jones KB4YZ, *SSTV modes - line timing* (1999) filling the
+gaps, and each one reconstructs its published line time exactly — that is what
+`SstvModeTimingTest` asserts.
+
+Martin, Scottie and Wraase SC-2 180 were additionally checked boundary-for-boundary against the
+[Robot36](https://github.com/xdsopl/robot36) decoder's channel offsets, and the whole waveform was
+cross-checked against [pySSTV](https://github.com/dnet/pySSTV) for seven modes.
+
+> One deliberate divergence: pySSTV shortens each Scottie sweep from the specified 138.24 ms to
+> 136.74 ms and pads the difference with an extra gap. Total line time still comes out right, so
+> decoders lock either way, but the colour data ends up 1.1% narrow. This library follows the
+> specification and the Robot36 decoder, which agree with each other.
+
+### Experimental modes
+
+No public timing specification could be found for the AVT family, Wraase SC-1, Wraase SC-2 60, or
+the historic monochrome modes. They are implemented on a best-effort basis:
+
+- **Timings are reconstructed**, derived from each mode's nominal on-air duration and frame size
+  rather than transcribed from a spec.
+- **VIS codes are guesses**, taken from slots left unassigned in the KB4YZ table.
+- **AVT's digital sync header is not implemented.** AVT deliberately omits the per-line sync pulse
+  and synchronises from a header sent once at the start; that header is the part there is no
+  specification for, so what this emits is the picture data alone.
+
+Expect these to be rejected by stock decoders. They are flagged at runtime via
+`SstvMode.isExperimental`, so you can filter them out:
+
+```kotlin
+val usable = SstvMode.entries.filterNot { it.isExperimental }
+```
+
+If you have a copy of the AVT or SC-1 specifications, please
+[open an issue](https://github.com/SEKY443/sstv-encoder/issues) — they would be straightforward to
+finish.
 
 ## Install
 
@@ -87,8 +219,8 @@ see [Using it from an Android app](#using-it-from-an-android-app).
 ### The picture
 
 The encoder takes raw pixels: an `IntArray` in row-major order, each entry packed as `0xAARRGGBB`.
-The alpha byte is ignored. The array has to be exactly one frame — `SstvMode.pixelCount`, i.e.
-320 × 256 = 81,920 for both modes.
+The alpha byte is ignored. The array has to be exactly one frame — `SstvMode.pixelCount`, which is
+320 × 256 = 81,920 for `MARTIN_M1` and 640 × 496 = 317,440 for `PD_120`.
 
 That deliberately narrow input is what keeps the core free of any image library. On the JVM there
 are AWT helpers that do the resampling for you:

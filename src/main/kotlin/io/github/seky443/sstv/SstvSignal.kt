@@ -22,8 +22,11 @@ public class SstvSignal(
     /** Time on air for one scan line, including sync and separator overhead. */
     public val lineSeconds: Double get() = mode.lineSeconds
 
-    /** Number of scan lines in the transmission. */
-    public val lineCount: Int get() = mode.height
+    /**
+     * Number of scan lines actually transmitted. This is the picture height for every mode except
+     * the PD family, which carries two picture rows per line.
+     */
+    public val lineCount: Int get() = mode.lineCount
 
     /** Length of the whole transmission, in seconds. */
     public val totalSeconds: Double get() = pcm.size.toDouble() / sampleRate
