@@ -9,6 +9,9 @@ mode radio amateurs have used to send images over HF since the 1950s.
 Feed it pixels, get back 16-bit mono PCM. Play that out of a speaker and any SSTV decoder
 (Robot36, MMSSTV, QSSTV, an FT-8xx radio) will draw your picture back.
 
+**35 modes across 8 families** — Martin, Scottie, Robot, PD (including PD 120, the mode the ISS
+transmits on), Pasokon TV, Wraase, AVT and the historic monochrome formats.
+
 > **Home: <https://github.com/SEKY443/sstv-encoder>**
 > That's the only place this library is published from. If you want to use it, start there —
 > releases, issues and the latest version all live in that repo.
@@ -276,6 +279,10 @@ val line = signal.lineIndexAt(playbackSeconds)        // Int?, null during heade
 val progress = signal.linePositionAt(playbackSeconds) // Float, fractional scan lines
 ```
 
+Both count *transmitted* lines, which is `signal.lineCount` — the same as the picture height for
+every family except PD, where one line paints two rows. Multiply by `mode.rowsPerLine` to get the
+top picture row a given line fills in.
+
 ### From Java
 
 Kotlin's `SstvEncoder.encode(...)` shorthand lives on the companion, so from Java go through the
@@ -336,10 +343,25 @@ An SSTV transmission is a single audio tone whose frequency carries the picture:
   data bits sent LSB first, an even parity bit and a stop bit, where a 1 is 1100 Hz and a 0 is
   1300 Hz. That code is how the receiver knows which mode, and therefore which line timings, to
   expect.
-- **Each scan line** is a 1200 Hz sync pulse, a black porch, and three colour sweeps separated by
-  short black gaps.
+- **Each scan line** is usually a 1200 Hz sync pulse and a black porch, then the picture data. What
+  that picture data holds — and, for Scottie and AVT, where the sync pulse sits or whether it is
+  there at all — is what separates the families:
+
+  | Family | The line carries |
+  |---|---|
+  | Martin, Scottie, Pasokon, Wraase | three full colour sweeps |
+  | Robot B/W, legacy mono | one luminance sweep |
+  | Robot 36 | luminance plus *one* chrominance channel, R-Y and B-Y alternating per line |
+  | Robot 72 | luminance plus both chrominance channels, each at half width |
+  | PD | two rows' luminance either side of a shared, vertically averaged R-Y and B-Y |
+  | AVT | picture only — no sync pulse at all |
+
+  Scottie is the odd one out among the RGB families: its sync pulse sits mid-line, ahead of the red
+  sweep, rather than at the head of the line.
+
 - **Within a sweep** each pixel gets a slice of time at a frequency between 1500 Hz (black) and
-  2300 Hz (white), linear in the 8-bit channel value.
+  2300 Hz (white), linear in the 8-bit channel value. Chrominance rides the same scale, so neutral
+  grey — 128 — lands on 1901.6 Hz.
 
 Two details matter more than they look:
 
@@ -360,11 +382,19 @@ line timing far enough to shear the received picture.
 Requires a JDK 17 or newer to run Gradle. The Java 17 toolchain the build asks for is downloaded
 automatically if you do not have it, and the library itself targets Java 11.
 
-The tests measure the actual waveform rather than trusting the constants — they count zero
-crossings to check that the leader is 1900 Hz, that the VIS bits spell out the right code, that
-white is 2300 Hz and black is 1500 Hz, that mid-grey lands at 1901.6 Hz, and that the sweeps come
-out in green-blue-red order. The published line timings are pinned to the spec to the nanosecond,
-because a few milliseconds of drift per line is the difference between a picture and a smear.
+The tests measure the actual waveform rather than trusting the constants. They count zero crossings
+to check that the leader is 1900 Hz, that the VIS bits spell out the right code, that white is
+2300 Hz and black is 1500 Hz, that mid-grey lands at 1901.6 Hz, and that each family lays its line
+out the way its specification says — Robot 36 alternating its chrominance channel between lines, PD
+packing two rows behind one sync pulse, Scottie's sweeps running their full 138.24 ms, AVT emitting
+no sync pulse at all. Every mode is then encoded end to end and checked against the length its own
+timings predict.
+
+Line timings are pinned to the published figures within a microsecond, which is three orders of
+magnitude tighter than any error that could matter — a few milliseconds of drift per line is the
+difference between a picture and a smear. The tolerance is not tighter still only because the
+published tables round: Martin M2 and M4 are quoted at 226.7986 ms, which does not reconcile with
+their own 0.2288 ms pixel time.
 
 ## Releasing
 
