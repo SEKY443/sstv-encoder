@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "io.github.seky443"
-version = "0.1.0"
+version = "0.2.0"
 
 // The library is Kotlin stdlib only. Java 11 bytecode keeps it consumable from an Android module
 // with minSdk 24 without desugaring.

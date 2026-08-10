@@ -54,6 +54,10 @@ Modes marked ⚠️ are **experimental** — see [below](#experimental-modes).
 | `MARTIN_M2` | 40 | 320 × 256 | 58.1 s |
 | `MARTIN_M3` | 36 | 320 × 128 | 57.1 s |
 | `MARTIN_M4` | 32 | 320 × 128 | 29.0 s |
+
+Martin Emmerson, G3OQD, mid-1980s. `MARTIN_M1` is about as universally supported as SSTV gets and
+is this library's default. M3 and M4 are M1 and M2 at half the vertical resolution — they send 128
+lines, and a decoder draws each one two pixels tall.
 </details>
 
 <details>
@@ -64,6 +68,10 @@ Modes marked ⚠️ are **experimental** — see [below](#experimental-modes).
 | `SCOTTIE_S1` | 60 | 320 × 256 | 109.6 s |
 | `SCOTTIE_S2` | 56 | 320 × 256 | 71.1 s |
 | `SCOTTIE_DX` | 76 | 320 × 256 | 268.9 s |
+
+Eddie T. J. Murphy, GM3SBC, who arrived at it by modifying the firmware of a Wraase SC-1 — which is
+why the two families share a lineage. `SCOTTIE_DX` spends four and a half minutes on air to buy the
+robustness to get a picture through conditions that would shred a faster mode.
 </details>
 
 <details>
@@ -77,8 +85,14 @@ Modes marked ⚠️ are **experimental** — see [below](#experimental-modes).
 | `ROBOT_36` | 8 | 320 × 240 | 36.0 s |
 | `ROBOT_72` | 12 | 320 × 240 | 72.0 s |
 
-`ROBOT_36` is 4:2:0 — each line carries luminance plus *one* chrominance channel, R-Y and B-Y
+Robot Research Inc., whose scan converters defined the earliest colour standards — these are the
+oldest modes here that are still in common use.
+
+Rather than send three full colour sweeps, the Robot colour modes send brightness at full
+resolution and colour at reduced resolution, which is why they fit a colour picture into so little
+time. `ROBOT_36` is 4:2:0: each line carries luminance plus *one* chrominance channel, R-Y and B-Y
 alternating, so full colour costs two lines. `ROBOT_72` is 4:2:2 and sends both every line.
+`ROBOT_36` is a good fast default — 36 seconds for colour, and near-universal decoder support.
 </details>
 
 <details>
@@ -94,8 +108,15 @@ alternating, so full colour costs two lines. `ROBOT_72` is 4:2:2 and sends both 
 | `PD_240` | 97 | 640 × 496 | 248.0 s |
 | `PD_290` | 94 | 800 × 616 | 288.7 s |
 
+Paul Turner, G4IJE. The highest-resolution modes in common use, and what you want if the picture
+matters more than the clock.
+
 One sync pulse covers two rows: the first row's luminance, then R-Y and B-Y averaged across both
-rows, then the second row's luminance. So `lineCount` is half `height` for these.
+rows, then the second row's luminance. Sharing chroma vertically is what buys the resolution — so
+`lineCount` is half `height` for these, and `height` must be even.
+
+`PD_120` is worth singling out: it is what the ISS transmits on during its SSTV events, so it is
+the mode most likely to be pointed at a receiver that has never heard of you.
 </details>
 
 <details>
@@ -106,6 +127,11 @@ rows, then the second row's luminance. So `lineCount` is half `height` for these
 | `PASOKON_P3` | 113 | 640 × 496 | 203.1 s |
 | `PASOKON_P5` | 114 | 640 × 496 | 304.6 s |
 | `PASOKON_P7` | 115 | 640 × 496 | 406.1 s |
+
+John Langner, WB2OSZ, for PC-based image exchange. Every part of a Pasokon line is a whole number
+of one time unit — 25 units of sync, 5 for each gap, one per pixel — so a line is exactly 1965
+units in all three modes, and the modes differ only in how long a unit lasts (1/4800, 1/3200 and
+1/2400 of a second).
 </details>
 
 <details>
@@ -119,6 +145,10 @@ rows, then the second row's luminance. So `lineCount` is half `height` for these
 | `WRAASE_SC1_24` ⚠️ | 33 | 256 × 240 | 24.0 s |
 | `WRAASE_SC1_48` ⚠️ | 37 | 256 × 240 | 48.0 s |
 | `WRAASE_SC1_96` ⚠️ | 41 | 256 × 240 | 96.0 s |
+
+Volker Wraase, DL2RZ, of Wraase Electronics. SC-1 came first and is the firmware Scottie grew out
+of; SC-2 is the one that stayed in use. Alone among the RGB families, Wraase runs its three sweeps
+back to back with no separator between them.
 </details>
 
 <details>
@@ -130,6 +160,12 @@ rows, then the second row's luminance. So `lineCount` is half `height` for these
 | `AVT_90` ⚠️ | 68 | 320 × 240 | 90.0 s |
 | `AVT_125` ⚠️ | 72 | 320 × 240 | 125.0 s |
 | `AVT_188` ⚠️ | 73 | 320 × 240 | 188.0 s |
+
+The Amiga Video Transceiver software. AVT's idea is that a sync pulse on every line is a liability:
+a burst of noise landing on one tears the picture from there down. So it drops them entirely and
+synchronises from a digital header sent once, up front — which is exactly the part with no public
+specification, and therefore the part this library cannot implement. See
+[experimental modes](#experimental-modes).
 </details>
 
 <details>
@@ -140,7 +176,31 @@ rows, then the second row's luminance. So `lineCount` is half `height` for these
 | `MONO_8` ⚠️ | 1 | 120 × 120 | 8.0 s |
 | `MONO_16` ⚠️ | 3 | 120 × 120 | 16.0 s |
 | `MONO_32` ⚠️ | 5 | 256 × 240 | 32.0 s |
+
+Where SSTV started, in the late 1950s: one luminance sweep behind a sync pulse and nothing else.
+These predate VIS headers altogether, so the codes here are this library's invention rather than
+anything a receiver will recognise.
 </details>
+
+### Which one should I use?
+
+The trade is always the same: time on air buys resolution and noise immunity, and nothing else
+does. A 640 × 496 picture genuinely takes four times as long as a 320 × 256 one — there is no
+compression anywhere in SSTV.
+
+| If you want | Use | Why |
+|---|---|---|
+| A safe default | `MARTIN_M1` | 114 s, colour, decoded by everything. The library's default |
+| Colour, quickly | `ROBOT_36` | 36 s for a 320 × 240 colour picture, and very widely supported |
+| The best picture | `PD_180` | 640 × 496 in about three minutes |
+| To match the ISS | `PD_120` | The mode ISS SSTV events transmit on |
+| To get through bad conditions | `SCOTTIE_DX` | 269 s of redundancy; built for weak signals |
+| To be quick above all | `MARTIN_M4` | 29 s, at half vertical resolution |
+| A fast link test | `ROBOT_8_BW` | 8 s of monochrome, just to confirm the path works |
+
+If you are transmitting to someone specific, ask what their software handles. If you are
+transmitting to whoever is listening, `MARTIN_M1`, `SCOTTIE_S1` and `ROBOT_36` are the three with
+the fewest surprises.
 
 ### Where the timings come from
 
@@ -198,7 +258,7 @@ dependencyResolutionManagement {
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.github.SEKY443:sstv-encoder:v0.1.0")
+    implementation("com.github.SEKY443:sstv-encoder:v0.2.0")
 }
 ```
 
@@ -207,15 +267,35 @@ dependencies {
 
 ```groovy
 repositories { maven { url 'https://jitpack.io' } }
-dependencies { implementation 'com.github.SEKY443:sstv-encoder:v0.1.0' }
+dependencies { implementation 'com.github.SEKY443:sstv-encoder:v0.2.0' }
 ```
 </details>
 
 Any git tag, branch (`main-SNAPSHOT`) or commit hash works as the version.
 
 Prefer to build it yourself? `./gradlew publishToMavenLocal` puts
-`io.github.seky443:sstv-encoder:0.1.0` in your local Maven repository, or use a composite build —
+`io.github.seky443:sstv-encoder:0.2.0` in your local Maven repository, or use a composite build —
 see [Using it from an Android app](#using-it-from-an-android-app).
+
+### Upgrading from 0.1.0
+
+0.2.0 adds 33 modes and is a breaking change. `MARTIN_M1` and `SCOTTIE_S1` still produce
+byte-identical audio, so if all you ever did was name a mode and call `encode`, nothing changes.
+
+`SstvMode` lost five properties that only ever made sense for a Martin- or Scottie-shaped line:
+`pixelSeconds`, `scanSeconds`, `syncPulseSeconds`, `syncPorchSeconds` and `separatorSeconds`. There
+is no replacement — a Robot 36 line has two different sweep lengths and an AVT line has no sync
+pulse at all, so there is no honest single value to report. Line layout now lives in an internal
+`LineFormat`. If you were using these to locate a sweep inside a line, state the published
+constants explicitly in your own code; that is what this library's own tests now do.
+
+Gained in exchange: `family`, `isExperimental`, `rowsPerLine`, `lineCount`, `SstvMode.fromVisCode()`
+and `SstvMode.inFamily()`.
+
+One quiet behavioural change: `SstvSignal.lineCount` now counts *transmitted* lines rather than
+returning `mode.height`. Those are the same for every family except PD, where one line paints two
+rows. Sizing a progress bar with it is still right; using it as a picture height is not — use
+`mode.height` for that.
 
 ## Usage
 
@@ -308,6 +388,24 @@ AudioSystem.getAudioInputStream(ByteArrayInputStream(signal.toWavBytes())).use {
 }
 ```
 
+## When a decoder will not read it
+
+| Symptom | Usual cause |
+|---|---|
+| Nothing decodes at all | The receiver never caught the VIS header. Start the recording *before* the transmission, and leave the leader intact — it is the first 0.91 s and decoders lock onto it |
+| Decoder picks the wrong mode | Another mode's VIS code got through, or the receiver does not support the one you sent. `SstvMode.fromVisCode()` tells you what a given code means |
+| Picture slants diagonally | The two clocks disagree slightly. This is normal over the air and every serious decoder has a slant correction; it is not something the encoder can fix |
+| Colours swapped or wrong | Pixels are not packed `0xAARRGGBB`. Android's `Bitmap.getPixels` gives this already; a `ByteBuffer` from elsewhere may well be BGR |
+| Picture squashed to half height | A PD mode with rows in the wrong order. PD reads two rows per line, so row order matters more than in the sequential families |
+| Audible clicks, smeared picture | Something re-encoded the audio. Keep it 16-bit PCM — MP3 and AAC destroy the phase continuity SSTV depends on |
+| An experimental mode does nothing | Expected. See [experimental modes](#experimental-modes) |
+
+Two things that are worth ruling out first: the audio being clipped (drop `amplitude` — the default
+0.75 already leaves headroom, but a hot output stage can still square the tops off), and the
+picture itself. Fine detail, thin strokes and low contrast do not survive SSTV. A colour bar along
+the top row gives the operator at the other end an instant read on whether the channels arrived in
+the right order and whether the image is skewed.
+
 ## Using it from an Android app
 
 The library is Kotlin stdlib only and compiles to Java 11 bytecode, so it drops into an Android module
@@ -324,6 +422,25 @@ Then hand `signal.pcm` to an `AudioTrack` built with `ENCODING_PCM_16BIT`, `CHAN
 `signal.sampleRate`. Streaming the array in chunks and wrapping at the end loops the transmission
 with flat memory use, and `AudioTrack.playbackHeadPosition` gives you the playback seconds to feed
 into `lineIndexAt`.
+
+### Memory, on the long modes
+
+A signal is held whole, so the slow high-resolution modes are not free. At the default 22050 Hz:
+
+| Mode | On air | `signal.pcm` | Peak through `toWavBytes()` |
+|---|---|---|---|
+| `ROBOT_36` | 38 s | 1.6 MB | 4.9 MB |
+| `MARTIN_M1` | 116 s | 5.1 MB | 15.3 MB |
+| `PD_120` | 128 s | 5.6 MB | 16.9 MB |
+| `PD_290` | 290 s | 12.8 MB | 38.4 MB |
+| `PASOKON_P7` | 408 s | 18.0 MB | 53.9 MB |
+
+`toWavBytes()` peaks at roughly three times the PCM size, because it holds the samples, their
+little-endian bytes and the assembled file at once — and `writeWav()` goes through it, so it costs
+the same. On a memory-constrained device, either stick to the shorter modes, drop `sampleRate` to
+11025 (still four times the highest tone on air), or feed `signal.pcm` straight to `AudioTrack` and
+skip the WAV entirely. (11025 Hz still sits comfortably above what a 2300 Hz tone needs; the
+encoder refuses anything below 8000 Hz, where the tones would alias.)
 
 To develop against the source without publishing, add a composite build to the app's
 `settings.gradle.kts`:
@@ -376,7 +493,7 @@ line timing far enough to shear the received picture.
 
 ```bash
 ./gradlew build                # compile and test
-./gradlew publishToMavenLocal  # install io.github.seky443:sstv-encoder:0.1.0 locally
+./gradlew publishToMavenLocal  # install io.github.seky443:sstv-encoder:0.2.0 locally
 ```
 
 Requires a JDK 17 or newer to run Gradle. The Java 17 toolchain the build asks for is downloaded
@@ -402,7 +519,7 @@ JitPack builds from git tags, so a release is just a tag:
 
 ```bash
 # bump `version` in build.gradle.kts to match, then
-git tag v0.1.0 && git push origin v0.1.0
+git tag v0.2.0 && git push origin v0.2.0
 ```
 
 The first time, open <https://jitpack.io/#SEKY443/sstv-encoder> and hit *Get it* on the tag to
