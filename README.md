@@ -36,6 +36,8 @@ transmits the day's forecast as SSTV and makes you decode it to turn the alarm o
 
 ## Supported modes
 
+To-do: Support all standardized transformation formats. 
+
 | Mode | VIS | Size | Time on air |
 |---|---|---|---|
 | `MARTIN_M1` | 44 | 320 × 256 | 114.3 s |
