@@ -31,7 +31,7 @@ Every maintained SSTV project is a *decoder*, and the C++ ones are GPL. There wa
 Central that just took an image and gave you the audio. This is that, written from scratch against
 the published mode timings.
 
-It was pulled out of [SSTV Alarm](https://github.com/SEKY443/Android -SSTV-Alarm), an Android alarm clock that
+It was pulled out of [SSTV Alarm](https://github.com/SEKY443/Android-SSTV-Alarm), an Android alarm clock that
 transmits the day's forecast as SSTV and makes you decode it to turn the alarm off.
 
 ## Supported modes
